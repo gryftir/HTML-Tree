@@ -2132,10 +2132,11 @@ sub content_as_XML
 
   $s = $h->as_text();
   $s = $h->as_text(skip_dels => 1);
+  $s - $h->as_text(delimiter => "\n");
 
 Returns a string consisting of only the text parts of the element's
 descendants.  Any whitespace inside the element is included unchanged,
-but whitespace not in the tree is never added.  But remember that
+but whitespace not in the tree is never added unless a delimiter is included.  But remember that
 whitespace may be ignored or compacted by HTML::TreeBuilder during
 parsing (depending on the value of the C<ignore_ignorable_whitespace>
 and C<no_space_compacting> attributes).  Also, since whitespace is
@@ -2144,7 +2145,8 @@ never added during parsing,
   HTML::TreeBuilder->new_from_content("<p>a</p><p>b</p>")
                    ->as_text;
 
-returns C<"ab">, not C<"a b"> or C<"a\nb">.
+returns C<"ab">, not C<"a b"> or C<"a\nb">,
+unless those characters are specified as a delimiter.
 
 Text under C<< <script> >> or C<< <style> >> elements is never
 included in what's returned.  If C<skip_dels> is true, then text
@@ -2179,12 +2181,14 @@ sub as_text {
     my (@pile) = ($this);
     my $tag;
     my $text = '';
+	my $delimiter = $options{delimiter} || undef;
     while (@pile) {
         if ( !defined( $pile[0] ) ) {    # undef!
             shift @pile;                 # how did that get in here?
         }
         elsif ( !ref( $pile[0] ) ) {     # text bit!  save it!
             $text .= shift @pile;
+			$text .= $delimiter if defined ($delimiter);
         }
         else {                           # it's a ref -- traverse under it
             unshift @pile, @{ $this->{'_content'} || $nillio }
@@ -2208,6 +2212,8 @@ sub as_trimmed_text {
     $text =~ s/[\n\r\f\t$extra_chars ]+/ /g;
     return $text;
 }
+
+	
 
 sub as_text_trimmed { shift->as_trimmed_text(@_) }   # alias, because I forget
 
